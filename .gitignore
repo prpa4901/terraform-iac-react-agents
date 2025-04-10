@@ -1,0 +1,11 @@
+__pycache__
+.env
+tf-iac
+infra-tf/.terraform
+infra-tf/terraform.tfstate
+infra-tf/.terraform.tfstate.backup
+infra-tf/.terraform/providers/
+infra-tf/.terraform/modules/
+infra-tf/terraform.tfstate
+infra-tf/terraform.tfstate.backup
+infra-tf/.terraform.lock.hcl
