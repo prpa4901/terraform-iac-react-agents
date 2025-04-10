@@ -78,7 +78,48 @@ agent_executor = create_react_agent(
     checkpointer=memory,
 )
 
-st.title("IAC and Re-Act")
+def handle_assistant_response(response1, role):
+    """Function to handle the assistant's response"""
+    if role == "user":
+        st.markdown(response1)
+    elif role == "assistant":
+        if isinstance(response1, dict) and response1.get("type") == "terraform_plan":
+            st.markdown("### ☁️ Terraform Plan Summary")
+            st.success(response1["summary"])
+            with st.expander("📄 Terraform Plan Details"):
+                st.code(response1["raw_plan"], language="bash")
+        elif try_pretty_print(response1):
+            pass
+        elif "interface" in response1 or "ip address" in response1 or "Plan:" in response1:
+            st.markdown("### ☁️ Terraform Plan Summary")
+            st.success("Terraform Plan")
+            st.markdown("#### Terraform Plan Details")
+            with st.expander("📄 Terraform Plan Details"):
+                st.code(response1, language="bash")
+        elif "Terraform code" in response1:
+            st.markdown("### ☁️ Terraform Code")
+            st.success("Terraform Code")
+            st.markdown("#### Terraform Code Details")
+            with st.expander("📄 Terraform Code Details"):
+                st.code(response1, language="bash")
+        elif "Terraform output" in response1:
+            st.markdown("### ☁️ Terraform Output")
+            st.success("Terraform Output")
+            st.markdown("#### Terraform Output Details")
+            with st.expander("📄 Terraform Output Details"):
+                st.code(response1, language="bash")
+        elif "Terraform files" in response1:
+            st.markdown("### ☁️ Terraform Workspace")
+            st.success("Terraform Workspace")
+            st.markdown("#### Terraform Workspace Details")
+            with st.expander("📄 Terraform Details"):
+                st.code(response1, language="bash")
+        elif "Error occurred" in response1 or "Traceback" in response1:
+            st.error(response1)
+        else:
+            st.markdown(response1 if isinstance(response1, str) else json.dumps(response1))
+
+st.title("🛠️ IAC & ReAct Assistant")
 st.write("Run cloud IAC operations with agents and get insights using AI!")
 
 if st.session_state.get('conversation_history') is None:
@@ -91,34 +132,33 @@ if st.session_state.get('thread_id') is None:
 
 for message in st.session_state.get('conversation_history', []):
     with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+        handle_assistant_response(message["content"], message["role"])
 
 question = st.chat_input('Ask a question on this topology')
 if question:
     st.chat_message("user").markdown(question)
     st.session_state['conversation_history'].append({"role": "user", "content": question})
 
+    placeholder = st.empty()
+    placeholder.text("Thinking...")
     with st.spinner("Fetching response from model..."):
         # bot_message = agent_executor.invoke({"messages": [HumanMessage(content=question)]}, config=st.session_state['config'])
         bot_message = get_llm_response(agent_executor,question,st.session_state['config'],
-                                       st.session_state['all_messages'])
+                                    st.session_state['all_messages'])
         # print(bot_message)
 
         # response = bot_message['output']
         st.session_state['all_messages'] = bot_message["messages"]
         response = bot_message["messages"][-1].content
-    
+    placeholder.empty()  # Clear the placeholder
     with st.chat_message("assistant"):
-        if try_pretty_print(response):
-            pass  # JSON already rendered
-        elif "interface" in response or "ip address" in response:
-            # Assume it's a CLI config
-            st.code(response, language="bash")
-        elif "Error occured" in response or "Traceback" in response:
-            st.error(response)
+        if response:
+            handle_assistant_response(response, "assistant")
         else:
-            # Fallback generic markdown
-            st.markdown(response)
+            st.error("No response from the assistant.")
+    
+    st.session_state['conversation_history'].append({"role": "assistant", "content": response})
+    
             
-        st.session_state['conversation_history'].append({"role": "assistant", "content": response})
+    
 
