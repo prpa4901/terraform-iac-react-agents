@@ -116,6 +116,3 @@ Run the app
 🤝 Contributing
 
 Feel free to fork, clone, or open issues and PRs!
-📜 License
-
-MIT License — feel free to use, modify, and share.
