@@ -70,7 +70,7 @@ if st.session_state.get("openai_api_key") is None:
 
 llm = ChatOpenAI(
     model="gpt-4o",
-    temperature=0,  # Lower for factual accuracy  # Larger context window
+    temperature=0,  # Lower for factual accuracy
     api_key=st.session_state["openai_api_key"],
 )
 
